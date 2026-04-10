@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&display=swap');
+  :root {
+    --black: #0a0a0a; --cream: #f2ede3; --grey: #9a9a8e;
+    --mid-grey: #c5c0b5; --border: #b5af9e; --apollyon: #6b0000;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0a;
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  }
+
+  /* ── LOGIN ── */
+  #login-screen { display:flex; flex-direction:column; align-items:center; gap:28px; width:100%; max-width:420px; }
+  .login-logo svg { filter: drop-shadow(0 0 18px rgba(139,26,26,0.5)); }
+  .login-title { text-align:center; color:#cc3333; font-size:11px; letter-spacing:6px; text-transform:uppercase; line-height:2; }
+  .login-title .big { display:block; font-size:20px; letter-spacing:8px; color:#fff; margin-bottom:4px; }
+  .login-box { width:100%; background:#111; border:1px solid #3a0000; padding:28px 28px 24px; display:flex; flex-direction:column; gap:16px; }
+  .login-box label { font-size:9px; letter-spacing:3px; color:#cc3333; text-transform:uppercase; }
+  .login-box input { width:100%; background:#0a0a0a; border:1px solid #3a0000; color:#ff6666; font-family:'Share Tech Mono',monospace; font-size:16px; letter-spacing:4px; padding:12px 14px; text-align:center; text-transform:uppercase; outline:none; caret-color:#cc3333; transition:border-color 0.2s; }
+  .login-box input:focus { border-color:#cc3333; box-shadow:0 0 8px rgba(204,51,51,0.2); }
+  .login-box input::placeholder { color:#333; letter-spacing:2px; font-size:12px; }
+  .login-btn { width:100%; background:#1a0000; border:1px solid #660000; color:#ffaaaa; font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:4px; text-transform:uppercase; padding:12px; cursor:pointer; transition:all 0.2s; }
+  .login-btn:hover { background:#2a0000; border-color:#cc3333; color:#fff; }
+  .login-error { font-size:9px; letter-spacing:2px; color:#cc3333; text-align:center; min-height:14px; text-transform:uppercase; }
+  .login-hint { font-size:8px; letter-spacing:2px; color:#333; text-align:center; text-transform:uppercase; line-height:2; }
+
+  /* ── EDIT AUTH MODAL ── */
+  #edit-modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+  }
+  #edit-modal-overlay.active { display: flex; }
+  #edit-modal {
+    background: #111; border: 1px solid #660000; padding: 32px 32px 24px;
+    width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 16px;
+    position: relative;
+  }
+  .modal-logo { text-align: center; margin-bottom: 4px; }
+  .modal-logo svg { filter: drop-shadow(0 0 10px rgba(139,26,26,0.6)); }
+  .modal-title { text-align: center; color: #cc3333; font-size: 9px; letter-spacing: 4px; text-transform: uppercase; line-height: 1.9; }
+  .modal-title .big { display: block; font-size: 14px; letter-spacing: 5px; color: #fff; margin-bottom: 4px; }
+  .modal-label { font-size: 9px; letter-spacing: 3px; color: #cc3333; text-transform: uppercase; }
+  .modal-input { width: 100%; background: #0a0a0a; border: 1px solid #3a0000; color: #ff6666; font-family: 'Share Tech Mono', monospace; font-size: 15px; letter-spacing: 4px; padding: 10px 14px; text-align: center; text-transform: uppercase; outline: none; caret-color: #cc3333; transition: border-color 0.2s; }
+  .modal-input:focus { border-color: #cc3333; box-shadow: 0 0 8px rgba(204,51,51,0.2); }
+  .modal-input::placeholder { color: #333; letter-spacing: 2px; font-size: 11px; }
+  .modal-buttons { display: flex; gap: 10px; }
+  .modal-btn { flex: 1; background: #1a0000; border: 1px solid #660000; color: #ffaaaa; font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; padding: 10px; cursor: pointer; transition: all 0.2s; }
+  .modal-btn:hover { background: #2a0000; border-color: #cc3333; color: #fff; }
+  .modal-btn.cancel { background: #1a1a1a; border-color: #444; color: #888; }
+  .modal-btn.cancel:hover { background: #222; border-color: #666; color: #ccc; }
+  .modal-error { font-size: 9px; letter-spacing: 2px; color: #cc3333; text-align: center; min-height: 12px; text-transform: uppercase; }
+  .modal-warning { font-size: 8px; letter-spacing: 1px; color: #444; text-align: center; text-transform: uppercase; line-height: 1.8; }
+
+  /* ── DOC ── */
+  #doc-screen { display:none; width:100%; }
+  #doc-toolbar { max-width:860px; margin:0 auto 10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#1a0000; border:1px solid #3a0000; padding:8px 14px; font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:1px; }
+  #doc-toolbar span { color:#ffaaaa; text-transform:uppercase; letter-spacing:2px; }
+  .tb-btn { background:#3a0000; color:#ffcccc; border:1px solid #660000; font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:1px; padding:4px 12px; cursor:pointer; text-transform:uppercase; transition:background 0.15s; }
+  .tb-btn:hover { background:#550000; }
+  .tb-btn.active { background:#660000; color:#fff; }
+  #clearance-badge { margin-left:auto; font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:2px; padding:3px 10px; border:1px solid; text-transform:uppercase; }
+
+  body.light-bg { background:#c8c4b8; }
+
+  .page { max-width:860px; margin:0 auto; background:var(--cream); box-shadow:0 0 0 1px #aaa,4px 4px 0 0 #aaa,8px 8px 20px rgba(0,0,0,0.35); position:relative; overflow:hidden; background-image:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(0,0,0,0.025) 28px,rgba(0,0,0,0.025) 29px); }
+  .page::before { content:''; position:absolute; inset:0; pointer-events:none; z-index:10; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); }
+  .watermark { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-35deg); font-family:'Share Tech Mono',monospace; font-size:72px; font-weight:900; color:rgba(107,0,0,0.04); letter-spacing:10px; pointer-events:none; z-index:5; white-space:nowrap; user-select:none; }
+  .corner-stamp { position:absolute; font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:2px; opacity:0.12; text-transform:uppercase; }
+  .corner-stamp.tl{top:10px;left:10px;} .corner-stamp.tr{top:10px;right:10px;text-align:right;}
+  .corner-stamp.bl{bottom:10px;left:10px;} .corner-stamp.br{bottom:10px;right:10px;text-align:right;}
+  .top-bar{background:var(--apollyon);border-bottom:3px solid #3a0000;}
+  .classification-bar{background:#3a0000;color:#f0c0c0;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;text-align:center;padding:5px 20px;display:flex;align-items:center;justify-content:center;gap:24px;}
+  .classification-bar span{opacity:0.7;}
+  .header{display:grid;grid-template-columns:96px 1fr 130px;align-items:center;padding:24px 30px 20px;border-bottom:2px solid var(--border);gap:20px;}
+  .logo-circle{width:86px;height:86px;border-radius:50%;border:3px solid var(--black);background:var(--cream);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .header-center{text-align:center;}
+  .foundation-name{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:4px;color:var(--grey);text-transform:uppercase;margin-bottom:4px;}
+  .scp-title{font-size:28px;font-weight:900;font-family:'Share Tech Mono',monospace;letter-spacing:2px;color:var(--black);line-height:1;}
+  .scp-title .scp-num{color:var(--apollyon);}
+  .tagline{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--grey);margin-top:5px;text-transform:uppercase;}
+  .class-badge-col{display:flex;flex-direction:column;gap:5px;}
+  .class-badge-item{display:flex;align-items:center;gap:7px;border:1px solid;padding:4px 8px 4px 5px;}
+  .class-badge-item.apollyon{border-color:#3a0000;background:#1a0000;}
+  .class-badge-item.amida{border-color:#1a0035;background:#0f0020;}
+  .class-badge-item.critical{border-color:#222;background:#111;}
+  .class-badge-item svg{flex-shrink:0;}
+  .cb-label{font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;opacity:0.55;line-height:1;display:block;}
+  .cb-value{font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;line-height:1.2;display:block;}
+  .apollyon .cb-label,.apollyon .cb-value{color:#ffaaaa;}
+  .amida .cb-label,.amida .cb-value{color:#d0aaff;}
+  .critical .cb-label,.critical .cb-value{color:#ffcccc;}
+  .info-bar{display:flex;border-bottom:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;}
+  .info-cell{flex:1;padding:8px 16px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:3px;}
+  .info-cell:last-child{border-right:none;}
+  .lbl{color:var(--grey);text-transform:uppercase;font-size:8px;letter-spacing:2px;}
+  .val{color:var(--black);font-size:11px;font-family:'Share Tech Mono',monospace;border-bottom:1px solid var(--mid-grey);padding-bottom:2px;}
+  .hierarchy{margin-bottom:26px;border:1px solid var(--border);background:rgba(0,0,0,0.015);overflow:hidden;}
+  .hierarchy-header{background:rgba(0,0,0,0.06);border-bottom:1px solid var(--border);padding:7px 14px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--black);font-weight:bold;}
+  .hierarchy-body{padding:16px 20px;display:flex;flex-direction:column;gap:6px;align-items:center;}
+  .hier-row{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;}
+  .hier-node{display:flex;align-items:center;gap:8px;padding:7px 16px;border:1px solid;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;flex:1;max-width:480px;}
+  .hier-node.tier-a{border-color:#3a0000;background:#1a0000;color:#ffaaaa;}
+  .hier-node.tier-d{border-color:#3a2000;background:#1a1000;color:#ffddaa;}
+  .hier-node.tier-c{border-color:#1a2a00;background:#0d1800;color:#aaddaa;}
+  .hier-node.tier-e{border-color:#001a3a;background:#000d20;color:#aaccff;}
+  .hier-node.tier-b{border-color:#2a2a2a;background:#181818;color:#cccccc;}
+  .hn-id{font-size:13px;font-weight:bold;opacity:0.9;flex-shrink:0;}
+  .hn-name{opacity:0.7;font-size:9px;}
+  .hn-role{margin-left:auto;font-size:8px;opacity:0.5;letter-spacing:2px;}
+  .hier-arrow{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--mid-grey);margin:2px 0;text-align:center;}
+  .content{padding:24px 30px;}
+  .section{margin-bottom:22px;}
+  .section-header{display:flex;align-items:center;margin-bottom:10px;gap:10px;}
+  .section-title{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--black);font-weight:bold;white-space:nowrap;}
+  .section-title.des-a{border-left:3px solid #cc3333;padding-left:8px;}
+  .section-title.des-b{border-left:3px solid #888;padding-left:8px;}
+  .section-title.des-c{border-left:3px solid #44aa44;padding-left:8px;}
+  .section-title.des-d{border-left:3px solid #cc8833;padding-left:8px;}
+  .section-title.des-e{border-left:3px solid #4488cc;padding-left:8px;}
+  .section-line{flex:1;height:1px;background:var(--border);}
+  .body-text{font-family:'Special Elite',monospace;font-size:13px;line-height:1.85;color:#1a1a1a;}
+  .body-text p{margin-bottom:10px;}
+  .body-text p:last-child{margin-bottom:0;}
+  .addendum-block{border:1px solid var(--border);margin-bottom:18px;background:rgba(0,0,0,0.015);}
+  .addendum-header{background:rgba(0,0,0,0.06);border-bottom:1px solid var(--border);padding:7px 14px;display:flex;justify-content:space-between;align-items:center;}
+  .addendum-header.des-c{border-left:3px solid #44aa44;}
+  .addendum-header.des-d{border-left:3px solid #cc8833;}
+  .addendum-header.des-e{border-left:3px solid #4488cc;}
+  .a-title{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--black);font-weight:bold;}
+  .a-sub{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--grey);text-transform:uppercase;}
+  .addendum-body{padding:14px;}
+  .log-entry{font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.7;color:#1a1a1a;margin-bottom:8px;}
+  .log-label{color:var(--grey);font-size:9px;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px;}
+  .log-quote{border-left:3px solid var(--apollyon);margin:10px 0;padding:8px 14px;background:rgba(139,26,26,0.04);font-family:'Special Elite',monospace;font-size:13px;font-style:italic;color:#2a0000;}
+  .divider-minor{height:1px;background:var(--border);margin:14px 0;opacity:0.5;}
+  .warning-box{border:2px solid var(--apollyon);background:rgba(107,0,0,0.04);padding:14px 18px;margin-bottom:22px;display:flex;gap:14px;align-items:flex-start;}
+  .warning-icon{font-size:20px;color:var(--apollyon);flex-shrink:0;line-height:1.4;}
+  .warning-text{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;line-height:1.8;color:var(--apollyon);text-transform:uppercase;}
+  .o5-statement{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;margin:14px 0;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;line-height:2;color:#1a1a1a;}
+  .final-note{background:#1a0000;color:#f0c0c0;padding:16px 20px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;line-height:2.2;text-align:center;margin-top:10px;}
+  .fn-line{display:block;}
+  .fn-line.bold{font-size:13px;letter-spacing:3px;color:#fff;}
+  .research-note{border:1px solid;padding:14px 18px;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.9;letter-spacing:0.5px;}
+  .research-note.red{background:rgba(107,0,0,0.06);border-color:rgba(107,0,0,0.25);color:#2a0000;}
+  .research-note.blue{background:rgba(0,40,100,0.06);border-color:rgba(30,80,160,0.25);color:#001030;}
+  .section-divider{display:flex;align-items:center;gap:14px;margin:30px 0 24px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--grey);}
+  .section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+  .footer{border-top:2px solid var(--border);padding:14px 30px;display:flex;align-items:center;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--grey);}
+  .footer-div{height:30px;width:1px;background:var(--border);}
+  .redacted-word{background:#111;color:#111;border-radius:2px;user-select:none;display:inline-block;font-family:'Share Tech Mono',monospace;}
+  .clearance-wall{background:rgba(0,0,0,0.07);border:1px solid #ccc;padding:18px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:#999;text-transform:uppercase;margin-bottom:22px;}
+  .edit-mode [contenteditable]{outline:1px dashed rgba(139,26,26,0.4);background:rgba(139,26,26,0.03);cursor:text;border-radius:1px;min-height:1em;}
+  .edit-mode [contenteditable]:focus{outline:2px solid rgba(139,26,26,0.6);background:rgba(139,26,26,0.06);}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="login-screen">
+  <div class="login-logo">
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+      <circle cx="256" cy="256" r="245" fill="none" stroke="#cc3333" stroke-width="28"/>
+      <circle cx="256" cy="256" r="155" fill="none" stroke="#cc3333" stroke-width="22"/>
+      <g transform="rotate(0,256,256)"><line x1="256" y1="32" x2="256" y2="200" stroke="#cc3333" stroke-width="26" stroke-linecap="round"/><polygon points="256,232 212,150 300,150" fill="#cc3333"/></g>
+      <g transform="rotate(120,256,256)"><line x1="256" y1="32" x2="256" y2="200" stroke="#cc3333" stroke-width="26" stroke-linecap="round"/><polygon points="256,232 212,150 300,150" fill="#cc3333"/></g>
+      <g transform="rotate(240,256,256)"><line x1="256" y1="32" x2="256" y2="200" stroke="#cc3333" stroke-width="26" stroke-linecap="round"/><polygon points="256,232 212,150 300,150" fill="#cc3333"/></g>
+    </svg>
+  </div>
+  <div class="login-title">
+    <span class="big">SCP Foundation</span>
+    Secure Document Access Terminal<br>Item № SCP-001 — Clearance Required
+  </div>
+  <div class="login-box">
+    <label>Enter Clearance Code</label>
+    <input type="password" id="code-input" placeholder="Enter access code" autocomplete="off" spellcheck="false"/>
+    <button class="login-btn" onclick="submitCode()">▶ Authenticate</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+  <div class="login-hint">Unauthorised access attempts are logged and reported<br>to the O5 Council. Proceed with caution.</div>
+</div>
+
+<!-- ── EDIT AUTH MODAL ── -->
+<div id="edit-modal-overlay">
+  <div id="edit-modal">
+    <div class="modal-logo">
+      <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="52" height="52">
+        <circle cx="256" cy="256" r="245" fill="none" stroke="#cc3333" stroke-width="28"/>
+        <circle cx="256" cy="256" r="155" fill="none" stroke="#cc3333" stroke-width="22"/>
+        <g transform="rotate(0,256,256)"><line x1="256" y1="32" x2="256" y2="200" stroke="#cc3333" stroke-width="26" stroke-linecap="round"/><polygon points="256,232 212,150 300,150" fill="#cc3333"/></g>
+        <g transform="rotate(120,256,256)"><line x1="256" y1="32" x2="256" y2="200" stroke="#cc3333" stroke-width="26" stroke-linecap="round"/><polygon points="256,232 212,150 300,150" fill="#cc3333"/></g>
+        <g transform="rotate(240,256,256)"><line x1="256" y1="32" x2="256" y2="200" stroke="#cc3333" stroke-width="26" stroke-linecap="round"/><polygon points="256,232 212,150 300,150" fill="#cc3333"/></g>
+      </svg>
+    </div>
+    <div class="modal-title">
+      <span class="big">Edit Authorisation</span>
+      Document editing requires O5-level clearance.<br>Enter your O5 access code to proceed.
+    </div>
+    <div class="modal-label">O5 Access Code</div>
+    <input type="password" class="modal-input" id="edit-code-input" placeholder="Enter O5 code" autocomplete="off" spellcheck="false"/>
+    <div class="modal-buttons">
+      <button class="modal-btn cancel" onclick="closeEditModal()">✕ Cancel</button>
+      <button class="modal-btn" onclick="submitEditCode()">▶ Authorise</button>
+    </div>
+    <div class="modal-error" id="edit-modal-error"></div>
+    <div class="modal-warning">Unauthorised edit attempts are flagged to O5 Council.<br>All changes are logged and timestamped.</div>
+  </div>
+</div>
+
+<!-- ── DOC SCREEN ── -->
+<div id="doc-screen">
+  <div id="doc-toolbar">
+    <span>◈ SCP-001 Document Viewer</span>
+    <button class="tb-btn" onclick="goBack()">◀ Back to Login</button>
+    <button class="tb-btn" id="btn-edit" onclick="requestEdit()">✎ Enable Editing</button>
+    <button class="tb-btn" onclick="window.print()">Print / Save PDF</button>
+    <div id="clearance-badge"></div>
+  </div>
+
+  <div class="page" id="doc-page">
+    <div class="watermark">APOLLYON</div>
+    <div class="corner-stamp tl">FORM-SCP-001<br>REV. 9</div>
+    <div class="corner-stamp tr">O5-CLEARANCE<br>REQUIRED</div>
+    <div class="corner-stamp bl">DO NOT DUPLICATE</div>
+    <div class="corner-stamp br">SCP FOUNDATION<br>INTERNAL USE</div>
+    <div class="top-bar">
+      <div class="classification-bar">
+        <span>◈</span>SECURE — CONTAIN — PROTECT<span>◈</span>SPECIAL CONTAINMENT PROCEDURES DOCUMENTATION<span>◈</span>
+      </div>
+    </div>
+    <div class="header">
+      <div class="logo-circle">
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+          <circle cx="256" cy="256" r="245" fill="none" stroke="#0a0a0a" stroke-width="30"/>
+          <circle cx="256" cy="256" r="155" fill="none" stroke="#0a0a0a" stroke-width="25"/>
+          <g transform="rotate(0,256,256)"><line x1="256" y1="32" x2="256" y2="200" stroke="#0a0a0a" stroke-width="28" stroke-linecap="round"/><polygon points="256,230 216,155 296,155" fill="#0a0a0a"/></g>
+          <g transform="rotate(120,256,256)"><line x1="256" y1="32" x2="256" y2="200" stroke="#0a0a0a" stroke-width="28" stroke-linecap="round"/><polygon points="256,230 216,155 296,155" fill="#0a0a0a"/></g>
+          <g transform="rotate(240,256,256)"><line x1="256" y1="32" x2="256" y2="200" stroke="#0a0a0a" stroke-width="28" stroke-linecap="round"/><polygon points="256,230 216,155 296,155" fill="#0a0a0a"/></g>
+        </svg>
+      </div>
+      <div class="header-center">
+        <div class="foundation-name">SCP Foundation</div>
+        <div class="scp-title">SCP-<span class="scp-num">001</span></div>
+        <div class="tagline">Special Containment Procedures</div>
+      </div>
+      <div class="class-badge-col">
+        <div class="class-badge-item apollyon">
+          <svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#cc4444" stroke-width="5" stroke-dasharray="73 22 73 22" stroke-dashoffset="10"/><polygon points="50,18 61,52 28,30 72,30 39,52" fill="none" stroke="#cc4444" stroke-width="4" stroke-linejoin="round"/><circle cx="50" cy="68" r="5" fill="#cc4444"/></svg>
+          <div><span class="cb-label">Containment</span><span class="cb-value">Apollyon</span></div>
+        </div>
+        <div class="class-badge-item amida">
+          <svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#9966dd" stroke-width="4"/><g stroke="#9966dd" stroke-width="3" stroke-linecap="round"><line x1="50" y1="8" x2="50" y2="20"/><line x1="50" y1="80" x2="50" y2="92"/><line x1="8" y1="50" x2="20" y2="50"/><line x1="80" y1="50" x2="92" y2="50"/><line x1="19" y1="19" x2="27" y2="27"/><line x1="73" y1="73" x2="81" y2="81"/><line x1="81" y1="19" x2="73" y2="27"/><line x1="27" y1="73" x2="19" y2="81"/></g><ellipse cx="50" cy="38" rx="9" ry="13" fill="none" stroke="#9966dd" stroke-width="2.5"/><ellipse cx="50" cy="62" rx="9" ry="13" fill="none" stroke="#9966dd" stroke-width="2.5"/><ellipse cx="38" cy="50" rx="13" ry="9" fill="none" stroke="#9966dd" stroke-width="2.5"/><ellipse cx="62" cy="50" rx="13" ry="9" fill="none" stroke="#9966dd" stroke-width="2.5"/><circle cx="50" cy="50" r="6" fill="#9966dd"/></svg>
+          <div><span class="cb-label">Disruption</span><span class="cb-value">Amida</span></div>
+        </div>
+        <div class="class-badge-item critical">
+          <svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#cc3333" stroke-width="4"/><path d="M28,54 Q28,25 50,25 Q72,25 72,54 L68,68 Q68,72 64,72 L36,72 Q32,72 32,68 Z" fill="none" stroke="#cc3333" stroke-width="4" stroke-linejoin="round"/><circle cx="40" cy="48" r="7" fill="#cc3333"/><circle cx="60" cy="48" r="7" fill="#cc3333"/><path d="M47,58 L50,54 L53,58 Z" fill="#cc3333"/><line x1="38" y1="72" x2="38" y2="78" stroke="#cc3333" stroke-width="3.5" stroke-linecap="round"/><line x1="46" y1="72" x2="46" y2="79" stroke="#cc3333" stroke-width="3.5" stroke-linecap="round"/><line x1="54" y1="72" x2="54" y2="79" stroke="#cc3333" stroke-width="3.5" stroke-linecap="round"/><line x1="62" y1="72" x2="62" y2="78" stroke="#cc3333" stroke-width="3.5" stroke-linecap="round"/></svg>
+          <div><span class="cb-label">Risk</span><span class="cb-value">Critical</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="info-bar">
+      <div class="info-cell"><div class="lbl">Item №</div><div class="val">SCP-001</div></div>
+      <div class="info-cell"><div class="lbl">Clearance Level</div><div class="val">LEVEL 5</div></div>
+      <div class="info-cell"><div class="lbl">Containment Class</div><div class="val">APOLLYON</div></div>
+      <div class="info-cell"><div class="lbl">Disruption Class</div><div class="val">AMIDA</div></div>
+      <div class="info-cell"><div class="lbl">Risk Class</div><div class="val">CRITICAL</div></div>
+    </div>
+    <div class="content" id="doc-content"></div>
+    <div class="footer">
+      <span>SCP FOUNDATION — INTERNAL DOCUMENTATION</span>
+      <div class="footer-div"></div>
+      <span>UNAUTHORIZED ACCESS IS A CLASS-A INFRACTION</span>
+      <div class="footer-div"></div>
+      <span>FORM SCP-001 · LEVEL 5 EYES ONLY</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const CODES = {
+  'SCR-1-ALPHA':   1,
+  'SCR-2-BRAVO':   2,
+  'SCR-3-DELTA':   3,
+  'SCR-4-ECHO':    4,
+  'SCR-5-FOXTROT': 5,
+  'O5-1-13-444':   6,
+};
+const LEVEL_LABELS = {
+  1:{text:'LEVEL 1 — RESTRICTED',color:'#888',bg:'#222'},
+  2:{text:'LEVEL 2 — CONFIDENTIAL',color:'#8899aa',bg:'#152030'},
+  3:{text:'LEVEL 3 — SECRET',color:'#aacc44',bg:'#182800'},
+  4:{text:'LEVEL 4 — TOP SECRET',color:'#ffcc44',bg:'#2a1e00'},
+  5:{text:'LEVEL 5 — THAUMIEL',color:'#ff6666',bg:'#2a0000'},
+  6:{text:'O5 ACCESS — UNRESTRICTED',color:'#ffddaa',bg:'#1a1000'},
+};
+const NAMES = {
+  d9341:'D-9341 (Marcus Hale)',
+  agent1:'Agent Rebecca Voss',
+  researcher1:'Dr. Yuki Tanaka',
+  researcher2:'Dr. Elias Morel',
+  o5author:'O5-7 (redacted)',
+};
+
+let editing = false;
+let currentLevel = 1;
+
+function r(text, minLevel, level) {
+  if (level >= minLevel) return text;
+  const len = Math.max(text.replace(/<[^>]+>/g,'').length, 8);
+  return `<span class="redacted-word" style="min-width:${Math.min(len,20)*7}px">${'█'.repeat(Math.min(len,20))}</span>`;
+}
+function rBlock(html, minLevel, level, label='') {
+  if (level >= minLevel) return html;
+  return `<div class="clearance-wall">[ ${label || `Level ${minLevel} Clearance Required`} — Section Withheld ]</div>`;
+}
+
+function buildDoc(level) {
+  let html = '';
+
+  html += `<div class="warning-box"><div class="warning-icon">⚠</div><div class="warning-text">${level>=3?'Level 5 Clearance Required — Unauthorized access is a Class-A infraction.<br>Non-hostile conduct toward SCP-001-A and all sub-designations is <strong>mandatory</strong> at all times.':'████████ ████ ████████ — ████████████ ██████ is a Class-A ████████.<br>████████ conduct toward ████████ is MANDATORY at all times.'}</div></div>`;
+
+  if(level>=3){html+=`<div class="hierarchy"><div class="hierarchy-header">◈ SCP-001 — Celestial Court — Entity Hierarchy</div><div class="hierarchy-body"><div class="hier-row"><div class="hier-node tier-a"><span class="hn-id">001-A</span><span class="hn-name">The Angel Queen</span><span class="hn-role">Apex Authority</span></div></div><div class="hier-arrow">▼</div><div class="hier-row"><div class="hier-node tier-d"><span class="hn-id">001-D</span><span class="hn-name">${level>=4?'Archangels':'████████'}</span><span class="hn-role">Command Overseer</span></div></div><div class="hier-arrow">▼</div><div class="hier-row"><div class="hier-node tier-c"><span class="hn-id">001-C</span><span class="hn-name">Seraphim</span><span class="hn-role">Defensive Guardian</span></div></div><div class="hier-arrow">▼</div><div class="hier-row" style="gap:10px;"><div class="hier-node tier-e" style="max-width:230px;"><span class="hn-id">001-E</span><span class="hn-name">${level>=4?'Soul-Bound':'████████'}</span><span class="hn-role">Trusted Companion</span></div><div class="hier-node tier-b" style="max-width:230px;"><span class="hn-id">001-B</span><span class="hn-name">Angels</span><span class="hn-role">General Ascended</span></div></div></div></div>`;}
+  else{html+=`<div class="clearance-wall">[ Entity Hierarchy — Level 3 Clearance Required ]</div>`;}
+
+  html+=`<div class="section"><div class="section-header"><div class="section-title des-a">Special Containment Procedures</div><div class="section-line"></div></div><div class="body-text" contenteditable="false">`;
+  if(level>=2){html+=`<p>Containment of SCP-001-A is not possible.</p><p>${r('Foundation personnel are to maintain strictly non-hostile relations with SCP-001-A at all times.',2,level)} ${r('Under no circumstances are personnel to insult, threaten, obstruct, or otherwise antagonize SCP-001-A or any sub-designated instances.',3,level)}</p><p>${r('Individuals who willingly pledge allegiance to SCP-001-A are not to be interfered with.',3,level)} ${r('Retrieval or containment of such individuals is prohibited unless explicit consent is given prior to ascension.',4,level)}</p><p>${r('All information regarding SCP-001 is to be restricted to Level 5 clearance.',4,level)} ${r('No attempts are to be made to access, map, or infiltrate SCP-001-A-1 ("The Heavenly Club").',4,level)}</p>`;}
+  else{html+=`<p>Containment of ████████ is ████████.</p><p>████████████████████████████████████████████████████████████████████████████████</p>`;}
+  html+=`</div></div>`;
+
+  html+=`<div class="section"><div class="section-header"><div class="section-title des-a">Description</div><div class="section-line"></div></div><div class="body-text" contenteditable="false">`;
+  if(level>=2){html+=`<p>${r('SCP-001 refers to a reality-altering extra-dimensional authority structure designated "The Celestial Court."',2,level)} ${r('SCP-001-A, referred to as "The Angel Queen," is a humanoid entity occupying the highest observed position within SCP-001-A-1.',2,level)}</p><p>${r('SCP-001-A manifests as a youthful female entity with the following consistent characteristics:',3,level)}</p><ul style="margin:6px 0 10px 18px;line-height:1.85;"><li>${r('Pale skin, soft facial structure, and downcast blue eyes',3,level)}</li><li>${r('Short peach-pink hair with a red bow',3,level)}</li><li>${r('A gold crown set with multiple gemstones',3,level)}</li><li>${r('Two overlapping golden halos emitting low-intensity light',3,level)}</li><li>${r('Large white feathered wings, typically held in a partially folded, inward-curving position',4,level)}</li><li>${r('A white gown with gold trim and embedded red gemstones',4,level)}</li></ul><p>${r("SCP-001-A's demeanor is consistently calm, friendly, and non-hostile.",3,level)} ${r('It treats all individuals as acquaintances or companions regardless of prior interaction.',4,level)}</p>`;}
+  else{html+=`<p>SCP-001 refers to ████████████████████████████████.</p><p>████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████</p>`;}
+  html+=`</div></div>`;
+
+  html+=`<div class="section"><div class="section-header"><div class="section-title des-a">SCP-001-A-1 — ${r('"The Heavenly Club"',3,level)}</div><div class="section-line"></div></div><div class="body-text" contenteditable="false">`;
+  if(level>=3){html+=`<p>SCP-001-A possesses a stable, self-contained extra-dimensional space accessible at will. ${r('This space is described by subjects as a brightly lit, socially oriented environment resembling a lounge or club setting.',3,level)}</p><ul style="margin:6px 0 6px 18px;line-height:1.85;"><li>${r('No aging, illness, or physical degradation occurs',3,level)}</li><li>${r('Subjects do not require food, sleep, or sustenance',4,level)}</li><li>${r('All occupants display elevated mood and social engagement',4,level)}</li></ul>`;}
+  else{html+=`<p>SCP-001-A possesses ████████████████████████████████████████████████████████████████.</p>`;}
+  html+=`</div></div>`;
+
+  html+=rBlock(`<div class="section"><div class="section-header"><div class="section-title des-a">Voluntary Ascension</div><div class="section-line"></div></div><div class="body-text" contenteditable="false"><p>SCP-001-A offers individuals the opportunity to "pledge themselves to the Celestial Court." Acceptance is voluntary and occurs without detectable memetic, cognitohazardous, or coercive influence. Upon acceptance, subjects undergo immediate transformation into entities designated SCP-001-B and are transported to SCP-001-A-1. No known subject has expressed regret following ascension.</p></div></div>`,3,level,'Voluntary Ascension — Level 3 Required');
+
+  html+=`<div class="section-divider">◈ Sub-Designations ◈</div>`;
+
+  html+=`<div class="section"><div class="section-header"><div class="section-title des-b">SCP-001-B — "Angels"</div><div class="section-line"></div></div><div class="body-text" contenteditable="false"><p>${r("SCP-001-B instances are former humans who have accepted SCP-001-A's offer.",2,level)} ${r('All instances display absolute loyalty to SCP-001-A, consistent emotional stability and contentment, and a lack of desire to return to baseline reality.',3,level)} ${r('SCP-001-B instances retain memory and personality but show diminished attachment to prior identity.',4,level)}</p></div></div>`;
+
+  html+=rBlock(`<div class="section"><div class="section-header"><div class="section-title des-c">SCP-001-C — "Seraphim"</div><div class="section-line"></div></div><div class="body-text" contenteditable="false"><p>SCP-001-C are a higher-order subset of SCP-001-B instances designated as protective entities within SCP-001-A-1. ${r('SCP-001-C instances are selected by SCP-001-A for defensive roles; criteria for selection are currently unknown.',4,level)}</p><ul style="margin:6px 0 10px 18px;line-height:1.85;"><li>Increased physical scale and presence</li><li>${r('Multiple wing structures (typically exceeding two)',3,level)}</li><li>${r('Persistent luminescence of wings, halos, and ocular regions',3,level)}</li><li>${r('Reduced expressive behavior and increased task-oriented focus',4,level)}</li></ul><p><strong>Behavior:</strong> Non-hostile under baseline conditions. ${r('Neutralization is instantaneous and leaves no recoverable remains.',4,level)}</p><p><strong>Capabilities:</strong> ${r('Localized reality alteration, spatial distortion, and conceptual interference limited to direct threats.',4,level)}</p><p><strong>Containment Notes:</strong> SCP-001-C instances cannot be contained independently of SCP-001-A. ${r('All attempts to observe SCP-001-C from baseline reality have resulted in visual distortion or loss of signal.',4,level)}</p></div></div>`,3,level,'SCP-001-C — Level 3 Required');
+
+  html+=rBlock(`<div class="section"><div class="section-header"><div class="section-title des-d">SCP-001-D — "Archangels"</div><div class="section-line"></div></div><div class="body-text" contenteditable="false"><p>SCP-001-D are the highest-order entities within SCP-001 below SCP-001-A. ${r('SCP-001-D instances function as command-level overseers of SCP-001-A-1 and all subordinate entities.',4,level)}</p><ul style="margin:6px 0 10px 18px;line-height:1.85;"><li>${r('Significantly increased scale and presence relative to SCP-001-C',4,level)}</li><li>${r('Multiple halo structures (commonly ≥3)',4,level)}</li><li>${r('Extensive wing formations, often exceeding standard anatomical limits',5,level)}</li><li>${r('Constant high-intensity luminescence',4,level)}</li><li>${r('Distinct visual identifiers — crowns, sigils, or unique markings',5,level)}</li></ul><p><strong>Behavior:</strong> ${r('Non-hostile under standard conditions. SCP-001-D will engage directly only when SCP-001-A is threatened or SCP-001-C instances are insufficient. Engagement results in immediate and total neutralization.',5,level)}</p><p><strong>Capabilities:</strong> ${r('Large-scale spatial restructuring, multi-target conceptual alteration, and dimensional stabilization and closure.',5,level)}</p></div></div>`,4,level,'SCP-001-D — Level 4 Required');
+
+  html+=rBlock(`<div class="section"><div class="section-header"><div class="section-title des-e">SCP-001-E — "Soul-Bound"</div><div class="section-line"></div></div><div class="body-text" contenteditable="false"><p>SCP-001-E are a specialized subset of SCP-001-B instances designated as directly trusted individuals by SCP-001-A. ${r('Selection appears to be based on personal affinity rather than functional necessity.',4,level)}</p><ul style="margin:6px 0 10px 18px;line-height:1.85;"><li>${r('Single or dual wing manifestations',4,level)}</li><li>${r('A faint halo or halo fragment',4,level)}</li><li>${r('Minimal luminescent output compared to higher classifications',5,level)}</li></ul><p><strong>Anomalous Properties:</strong> ${r('Limited localized reality manipulation, increased durability and regenerative capacity, and resistance to external anomalous influence. Any perceived harm directed toward SCP-001-A results in immediate awareness across all SCP-001-E instances.',5,level)}</p><p><strong>Behavioral Response:</strong> ${r('If SCP-001-A is threatened, SCP-001-E instances will immediately converge on the source and attempt to intervene prior to SCP-001-C activation, displaying heightened aggression. SCP-001-E instances defer to SCP-001-C and SCP-001-D in all defensive scenarios.',5,level)}</p></div></div>`,4,level,'SCP-001-E — Level 4 Required');
+
+  html+=`<div class="section-divider">◈ Anomalous Capability & Trigger ◈</div>`;
+
+  html+=rBlock(`<div class="section"><div class="section-header"><div class="section-title des-a">Anomalous Capability — SCP-001-A</div><div class="section-line"></div></div><div class="body-text" contenteditable="false"><p>SCP-001-A is capable of altering all aspects of reality, including abstract and conceptual structures. Documented capabilities include matter and energy manipulation, spatial and temporal alteration, modification or removal of concepts, and complete erasure or reconstruction of entities. There are no observed limitations to this ability.</p></div></div>`,3,level,'Anomalous Capability — Level 3 Required');
+
+  html+=rBlock(`<div class="section"><div class="section-header"><div class="section-title des-a">Behavioral Trigger — SCP-001-A</div><div class="section-line"></div></div><div class="body-text" contenteditable="false"><p>SCP-001-A remains non-hostile under all standard conditions. Hostile response is triggered exclusively by direct harm or attempted harm toward SCP-001-A, or harm, harassment, or targeting of any sub-designated instances. All observed responses are instantaneous and irreversible.</p></div></div>`,3,level,'Behavioral Trigger — Level 3 Required');
+
+  html+=`<div class="section-divider">◈ Addenda ◈</div>`;
+
+  html+=`<div class="addendum-block"><div class="addendum-header"><div class="a-title">Addendum 001-1</div><div class="a-sub">Observation Log — Initial Contact</div></div><div class="addendum-body"><div class="log-entry"><span class="log-label">Subject</span>${level>=6?NAMES.d9341:'D-9341'}</div><div class="divider-minor"></div><div class="body-text" contenteditable="false"><p>${r('SCP-001-A approached subject without prompting. Subject displayed no signs of distress. SCP-001-A provided written message:',2,level)}</p></div>${level>=3?`<div class="log-quote" contenteditable="false">"You can stay if you want."</div>`:`<div class="clearance-wall">[ Communication Log — Level 3 Required ]</div>`}<div class="body-text" contenteditable="false"><p>${r('Subject accepted within 43 seconds. Transformation occurred immediately.',3,level)} ${r('Subject designated SCP-001-B. No resistance or distress observed.',4,level)}</p></div></div></div>`;
+
+  html+=`<div class="addendum-block"><div class="addendum-header"><div class="a-title">Addendum 001-2</div><div class="a-sub">Incident Report — Unauthorized Aggression</div></div><div class="addendum-body"><div class="log-entry"><span class="log-label">Subject</span>${level>=6?NAMES.agent1:`Agent <span class="redacted-word">█████</span>`}</div><div class="divider-minor"></div><div class="body-text" contenteditable="false"><p>${r('Agent verbally insulted SCP-001-A and attempted to restrain an SCP-001-B instance.',3,level)} ${r('SCP-001-A displayed immediate change in posture and expression. Agent ceased movement.',3,level)} ${r('Subsequent analysis determined the concept of "aggression" had been removed from the subject, rendering them permanently non-threatening.',4,level)} ${r('No further action taken by SCP-001-A.',4,level)}</p></div></div></div>`;
+
+  html+=rBlock(`<div class="addendum-block"><div class="addendum-header des-c"><div class="a-title">Addendum 001-C-1</div><div class="a-sub">Observation — Cross-Dimensional Visual Event</div></div><div class="addendum-body"><div class="log-entry"><span class="log-label">Observing Researcher</span>${level>=6?NAMES.researcher1:`Dr. <span class="redacted-word">████████████</span>`}</div><div class="divider-minor"></div><div class="body-text" contenteditable="false"><p>During a brief cross-dimensional visual event, three SCP-001-C instances were observed positioned behind SCP-001-A. All instances remained motionless until a researcher verbally suggested extraction of an SCP-001-B subject. At this point, all three entities simultaneously oriented toward the observer despite lack of direct line-of-sight. Visual feed terminated immediately.</p></div></div></div>`,3,level,'Addendum 001-C-1 — Level 3 Required');
+
+  html+=rBlock(`<div class="addendum-block"><div class="addendum-header des-c"><div class="a-title">Addendum 001-C-2</div><div class="a-sub">Research Note</div></div><div class="addendum-body"><div class="log-entry"><span class="log-label">Author</span>${level>=6?NAMES.researcher2:`Dr. <span class="redacted-word">███████████</span>`}</div><div class="divider-minor"></div><div class="body-text" contenteditable="false"><p>SCP-001-C instances do not appear to protect SCP-001-A out of obligation. Behavioral analysis suggests:</p></div><div class="research-note red" contenteditable="false">They do not guard her because they were told to.<br>They guard her because they want to.</div></div></div>`,3,level,'Addendum 001-C-2 — Level 3 Required');
+
+  html+=rBlock(`<div class="addendum-block"><div class="addendum-header des-d"><div class="a-title">Addendum 001-D-1</div><div class="a-sub">Observation — Partial Incursion Event</div></div><div class="addendum-body"><div class="body-text" contenteditable="false"><p>During a partial incursion event, one SCP-001-D instance manifested at the boundary of SCP-001-A-1. All SCP-001-C instances ceased movement. The intrusion point was removed from local space-time. No residual anomaly detected.</p></div></div></div>`,4,level,'Addendum 001-D-1 — Level 4 Required');
+
+  html+=rBlock(`<div class="addendum-block"><div class="addendum-header des-e"><div class="a-title">Addendum 001-E-1</div><div class="a-sub">Research Note</div></div><div class="addendum-body"><div class="body-text" contenteditable="false"><p>SCP-001-E instances appear to represent individuals personally valued by SCP-001-A. Unlike SCP-001-C and SCP-001-D, their designation is not based on function.</p></div><div class="research-note blue" contenteditable="false">It is based on trust.</div></div></div>`,4,level,'Addendum 001-E-1 — Level 4 Required');
+
+  html+=rBlock(`<div class="addendum-block"><div class="addendum-header"><div class="a-title">Addendum 001-3</div><div class="a-sub">O5 Council Statement</div></div><div class="addendum-body">${level>=6?`<div class="log-entry"><span class="log-label">Issued by</span>${NAMES.o5author}</div><div class="divider-minor"></div>`:''}<div class="o5-statement" contenteditable="false">SCP-001-A does not compel loyalty.<br>SCP-001-A does not enforce authority.<br>SCP-001-A does not seek control.<br><br>However:<br><br>SCP-001-A possesses total authority over reality and its underlying concepts.<br>SCP-001-D commands. SCP-001-C guards. SCP-001-E protects what she loves.<br><br>Continued non-hostility is to be maintained under all circumstances.</div><div class="final-note"><span class="fn-line">SCP-001-A offers entry.</span><span class="fn-line">Acceptance is voluntary.</span><span class="fn-line">Refusal is permitted.</span><span class="fn-line bold">Interference is not.</span></div></div></div>`,5,level,'O5 Council Statement — Level 5 Required');
+
+  return html;
+}
+
+// ── Navigation ──
+function submitCode() {
+  const raw = document.getElementById('code-input').value.trim().toUpperCase();
+  const level = CODES[raw];
+  if (!level) {
+    const err = document.getElementById('login-error');
+    err.textContent = '⚠ Invalid access code. Attempt logged.';
+    document.getElementById('code-input').value = '';
+    setTimeout(() => err.textContent='', 3000);
+    return;
+  }
+  currentLevel = level;
+  showDoc(level);
+}
+
+function showDoc(level) {
+  const info = LEVEL_LABELS[level];
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('doc-screen').style.display   = 'block';
+  document.body.classList.add('light-bg');
+  const badge = document.getElementById('clearance-badge');
+  badge.textContent = info.text;
+  badge.style.color = info.color;
+  badge.style.borderColor = info.color;
+  badge.style.background  = info.bg;
+  document.getElementById('doc-content').innerHTML = buildDoc(level);
+}
+
+function goBack() {
+  document.getElementById('doc-screen').style.display   = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.body.classList.remove('light-bg');
+  document.getElementById('code-input').value = '';
+  document.getElementById('login-error').textContent = '';
+  if (editing) disableEditing();
+}
+
+// ── Edit auth modal ──
+function requestEdit() {
+  if (editing) {
+    // If already editing, clicking again locks it
+    disableEditing();
+    return;
+  }
+  // Open the modal
+  const overlay = document.getElementById('edit-modal-overlay');
+  overlay.classList.add('active');
+  document.getElementById('edit-code-input').value = '';
+  document.getElementById('edit-modal-error').textContent = '';
+  setTimeout(() => document.getElementById('edit-code-input').focus(), 50);
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal-overlay').classList.remove('active');
+  document.getElementById('edit-code-input').value = '';
+  document.getElementById('edit-modal-error').textContent = '';
+}
+
+function submitEditCode() {
+  const raw = document.getElementById('edit-code-input').value.trim().toUpperCase();
+  if (raw !== 'O5-1-13-444') {
+    const err = document.getElementById('edit-modal-error');
+    err.textContent = '⚠ Authorisation denied. Attempt flagged.';
+    document.getElementById('edit-code-input').value = '';
+    setTimeout(() => err.textContent='', 3000);
+    return;
+  }
+  closeEditModal();
+  enableEditing();
+}
+
+function enableEditing() {
+  editing = true;
+  const page = document.getElementById('doc-page');
+  const btn  = document.getElementById('btn-edit');
+  page.classList.add('edit-mode');
+  page.querySelectorAll('[contenteditable]').forEach(f => f.setAttribute('contenteditable','true'));
+  btn.textContent = '🔒 Lock Document';
+  btn.classList.add('active');
+}
+
+function disableEditing() {
+  editing = false;
+  const page = document.getElementById('doc-page');
+  const btn  = document.getElementById('btn-edit');
+  page.classList.remove('edit-mode');
+  page.querySelectorAll('[contenteditable]').forEach(f => f.setAttribute('contenteditable','false'));
+  btn.textContent = '✎ Enable Editing';
+  btn.classList.remove('active');
+}
+
+// Enter key bindings
+document.getElementById('code-input').addEventListener('keydown', e => { if(e.key==='Enter') submitCode(); });
+document.getElementById('edit-code-input').addEventListener('keydown', e => { if(e.key==='Enter') submitEditCode(); });
+
+// Click outside modal to cancel
+document.getElementById('edit-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+</script>
+</body>
+</html>
